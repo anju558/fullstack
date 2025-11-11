@@ -1,24 +1,32 @@
-# auth.py
-from passlib.context import CryptContext
-from jose import jwt
 from datetime import datetime, timedelta
-from pymongo import MongoClient
-from config import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES, MONGODB_URL, DB_NAME
+from jose import JWTError, jwt
+from fastapi import HTTPException, status, Depends
+from fastapi.security import OAuth2PasswordBearer
+import os
+from dotenv import load_dotenv
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-client = MongoClient(MONGODB_URL)
-db = client[DB_NAME]
-users = db["users"]
+load_dotenv()
 
-def hash_password(password: str) -> str:
-    return pwd_context.hash(password)
+SECRET_KEY = os.getenv("JWT_SECRET_KEY", "mysecretkey123")
+ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("JWT_EXPIRATION_MINUTES", 60))
 
-def verify_password(plain: str, hashed: str) -> bool:
-    return pwd_context.verify(plain, hashed)
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login")
 
-def create_token(email: str) -> str:
-    expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    return jwt.encode({"sub": email, "exp": expire}, SECRET_KEY, algorithm=ALGORITHM)
+def create_access_token(data: dict, expires_delta: timedelta | None = None):
+    to_encode = data.copy()
+    expire = datetime.utcnow() + (expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
 
-def get_user(email: str):
-    return users.find_one({"email": email})
+
+def verify_token(token: str = Depends(oauth2_scheme)):
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        username = payload.get("sub")
+        if username is None:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token.")
+        return username
+    except JWTError:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token or expired.")

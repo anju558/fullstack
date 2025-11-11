@@ -1,57 +1,54 @@
-from fastapi import FastAPI, HTTPException, status
-from pydantic import BaseModel, validator, EmailStr
-from typing import Optional
-from datetime import date, datetime
+from fastapi import FastAPI, HTTPException, status, Query, Depends
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from datetime import datetime, timedelta, date
+from jose import JWTError, jwt
+from models import Shipment
 import re
-import os
-from dotenv import load_dotenv
-from pymongo import MongoClient
-from bson import ObjectId
-from urllib.parse import quote_plus
-import bcrypt
 
-username = os.getenv("MONGO_USERNAME", "")
-password = os.getenv("MONGO_PASSWORD", "")
-host = os.getenv("MONGO_HOST", "localhost")
-port = os.getenv("MONGO_PORT", "27017")
-db_name = os.getenv("MONGO_DB_NAME", "myapp")
-user_collection = os.getenv("MONGO_USER_COLLECTION", "users")
-shipments_collection = os.getenv("MONGO_SHIPMENTS_COLLECTION", "shipments")
+# Import database helpers
+from database import users_col, shipments_col, hash_password, verify_password
 
-# Escape special chars
-safe_username = quote_plus(username) if username else ""
-safe_password = quote_plus(password) if password else ""
+app = FastAPI(title="SCMXPERTLITE", version="1.0.0")
 
-# Build URI safely
-if safe_username and safe_password:
-    mongodb_uri = f"mongodb://{safe_username}:{safe_password}@{host}:{port}/?authSource=admin"
-else:
-    mongodb_uri = f"mongodb://{host}:{port}/"  # no auth
+# === JWT CONFIG ===
+SECRET_KEY = "mysecretkey123"  # Move this to .env in production
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
-print(f"[INFO] Connecting to MongoDB: {host}:{port}, DB: {db_name}")
+# Tell Swagger we use Bearer tokens
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login")
 
 
-# 🔌 MongoDB Connection
-client = MongoClient(mongodb_uri)
-db = client[db_name]
-users_col = db[user_collection]
-shipments_col = db[shipments_collection]
+# === JWT HELPER FUNCTIONS ===
+def create_access_token(data: dict, expires_delta: timedelta | None = None):
+    """Create JWT token with expiration"""
+    to_encode = data.copy()
+    expire = datetime.utcnow() + (expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
+    to_encode.update({"exp": expire})
+    token = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return token
 
-app = FastAPI(title="Auth API")
 
-# Password helpers (now used!)
-def hash_password(password: str) -> str:
-    salt = bcrypt.gensalt()
-    hashed = bcrypt.hashpw(password.encode('utf-8'), salt)
-    return hashed.decode('utf-8')
+def verify_token(token: str = Depends(oauth2_scheme)):
+    """Automatically extracts JWT from Authorization: Bearer <token>"""
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        email = payload.get("email")
+        password_hash = payload.get("password_hash")
+        if email is None or password_hash is None:
+            raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Invalid token payload.")
+        return {"email": email, "password_hash": password_hash}
+    except JWTError:
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Invalid or expired token.")
 
-def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return bcrypt.checkpw(plain_password.encode('utf-8'), hashed_password.encode('utf-8'))
+
+# === ROOT ROUTE ===
 @app.get("/")
 def root():
-    return {"message": "Auth & Shipment API is running!"}
+    return {"message": "Auth & Shipment API with JWT (Email + Password) is running!"}
 
-#Keep your original /signup (form-style), but add hashing + DB insert
+
+# === AUTH ROUTES ===
 @app.post("/signup")
 def signup(username: str, email: str, password: str, confirm_password: str):
     errors = []
@@ -74,130 +71,61 @@ def signup(username: str, email: str, password: str, confirm_password: str):
         errors.append("Password must contain at least one special character (e.g., !, @, #, $).")
 
     if errors:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="; ".join(errors)
-        )
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "; ".join(errors))
 
-    # Check if user already exists
     if users_col.find_one({"email": email}):
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Email already registered.")
     if users_col.find_one({"username": username}):
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Username already taken.")
 
-    # Hash password & store in MongoDB
     hashed_pw = hash_password(password)
     result = users_col.insert_one({
         "username": username,
         "email": email,
-        "password_hash": hashed_pw,   # never store plain password!
+        "password_hash": hashed_pw,
         "created_at": datetime.utcnow()
     })
 
     print(f"[SIGNUP] User '{username}' saved with ID: {result.inserted_id}")
-    return {
-        "message": f"Signup successful for {username}",
-        "user_id": str(result.inserted_id)
-    }
+    return {"message": f"Signup successful for {username}"}
 
-# Keep your original /login (form-style), but verify against DB + hash
+
+# ⚙️ LOGIN now supports Swagger auth flow
 @app.post("/login")
-def login(email: str, password: str):
-    if "@" not in email or not email.endswith(".com"):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid email: must contain '@' and end with '.com'."
-        )
+def login(form_data: OAuth2PasswordRequestForm = Depends()):
+    email = form_data.username  # Swagger uses "username" field for email
+    password = form_data.password
 
-    # Fetch user from MongoDB
     user = users_col.find_one({"email": email})
-    if not user:
+    if not user or not verify_password(password, user["password_hash"]):
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Invalid email or password.")
 
-    # Verify hashed password
-    if not verify_password(password, user["password_hash"]):
-        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Invalid email or password.")
+    # ✅ JWT now includes both email and hashed password
+    access_token = create_access_token(data={
+        "email": email,
+        "password_hash": user["password_hash"]  # store hashed password safely
+    })
 
-    print(f"[LOGIN] User '{email}' authenticated")
+    print(f"[LOGIN] {email} → JWT issued with email and hashed password")
+    return {"access_token": access_token, "token_type": "bearer"}
+
+
+# === PROTECTED ROUTE ===
+@app.get("/profile")
+def profile(user: dict = Depends(verify_token)):
+    """Use email and password from JWT"""
+    db_user = users_col.find_one({"email": user["email"]})
+    if not db_user:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "User not found.")
     return {
-        "message": f"Login successful for {email}",
-        "user_id": str(user["_id"])
+        "email": db_user["email"],
+        "username": db_user["username"],
+        "stored_password_hash": db_user["password_hash"],
+        "token_password_hash": user["password_hash"]
     }
 
-# Keep your Pydantic models (optional — not used in form routes, but safe to keep)
-class SignupRequest(BaseModel):
-    username: str
-    email: str
-    password: str
-    confirm_password: str
 
-    @validator("username")
-    def validate_username(cls, v):
-        if len(v) <= 3:
-            raise ValueError("Username must be more than 3 characters.")
-        return v
-
-    @validator("email")
-    def validate_email(cls, v):
-        if "@" not in v or not v.endswith(".com"):
-            raise ValueError("Invalid email: must contain '@' and end with '.com'.")
-        return v
-
-    @validator("password")
-    def validate_password(cls, v, values):
-        errors = []
-        if len(v) < 8:
-            errors.append("Password must be at least 8 characters long.")
-        if not re.search(r"[A-Z]", v):
-            errors.append("Password must contain at least one uppercase letter.")
-        if not re.search(r"[a-z]", v):
-            errors.append("Password must contain at least one lowercase letter.")
-        if not re.search(r"[0-9]", v):
-            errors.append("Password must contain at least one digit.")
-        if not re.search(r"[!@#$%^&*()_+\-=\[\]{};':\"\\|,.<>\/?]", v):
-            errors.append("Password must contain at least one special character.")
-        if 'confirm_password' in values and v != values['confirm_password']:
-            errors.append("Password does not match.")
-        if errors:
-            raise ValueError("; ".join(errors))
-        return v
-
-class LoginRequest(BaseModel):
-    email: str
-    password: str
-
-    @validator("email")
-    def validate_email(cls, v):
-        if "@" not in v or not v.endswith(".com"):
-            raise ValueError("Invalid email: must contain '@' and end with '.com'.")
-        return v
-
-    @validator("password")
-    def validate_password(cls, v):
-        if len(v) == 0:
-            raise ValueError("Password cannot be empty.")
-        return v
-
-# Shipment models & routes — unchanged (kept as-is)
-from datetime import date
-from typing import Optional
-
-class Shipment(BaseModel):
-    Shipment_Number: str
-    Route_Details: str
-    Device: str
-    Po_Number: str
-    NDC_Number: str
-    Serial_Number_of_Goods: str
-    Container_number: str
-    Goods_Type: str
-    Expected_Delivery_Date: date
-    delivery_number: str
-    Batch_ID: str
-    Shipment_Description: str
-
-from fastapi import Query
-
+# === SHIPMENT ROUTES ===
 @app.get("/shipments", response_model=Shipment)
 def read_shipments(
     Shipment_Number: str = Query(..., alias="Shiment_Number"),
@@ -228,13 +156,15 @@ def read_shipments(
         Shipment_Description=Shipment_Description,
     )
 
+
 @app.post("/shipments", response_model=Shipment)
-def create_shipment(shipment: Shipment):
-    # Store in MongoDB
+def create_shipment(shipment: Shipment, user: dict = Depends(verify_token)):
+    """Record who created the shipment using email from JWT"""
     shipment_data = shipment.dict()
+    shipment_data["created_by_email"] = user["email"]
     shipment_data["created_at"] = datetime.utcnow()
     result = shipments_col.insert_one(shipment_data)
     shipment_data["id"] = str(result.inserted_id)
-    
-    print(f"[CREATE SHIPMENT] ID: {result.inserted_id}, Number: {shipment.Shipment_Number}")
+
+    print(f"[CREATE SHIPMENT] Created by '{user['email']}' | ID: {result.inserted_id}")
     return shipment
