@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Shipments — ShipTrack</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body class="dashboard">
+    <div class="dashboard-container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>ShipTrack</h2>
+                <button class="sidebar-toggle" id="sidebarToggle">☰</button>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="/dashboard" class="active">📦 Shipments</a>
+                <a href="/devices">🖥️ Devices</a>
+                <a href="#profile">👤 Profile</a>
+                <a href="/logout">🚪 Logout</a>
+            </nav>
+        </aside>
+
+        <main class="dashboard-main">
+            <header class="dashboard-header">
+                <h1>Shipments</h1>
+                <div>Welcome, <strong>{{ username }}</strong></div>
+                <button class="btn-primary" id="newShipmentBtn">+ New Shipment</button>
+            </header>
+
+            <section class="filters">
+                <input type="text" id="searchInput" placeholder="Search by shipment #, route, device..." class="search-box">
+                <select id="statusFilter" class="filter-select">
+                    <option value="">All Status</option>
+                    <option value="pending">Pending</option>
+                    <option value="in-transit">In Transit</option>
+                    <option value="delivered">Delivered</option>
+                    <option value="exception">Exception</option>
+                </select>
+            </section>
+
+            <section class="table-container">
+                <table class="shipments-table">
+                    <thead>
+                        <tr>
+                            <th>Shipment #</th>
+                            <th>Route</th>
+                            <th>Device</th>
+                            <th>Status</th>
+                            <th>Expected Delivery</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="shipmentsBody">
+                        <tr>
+                            <td colspan="6" class="text-center">Loading shipments...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+        </main>
+    </div>
+
+    <!-- Modal for new shipment -->
+    <div id="shipmentModal" class="modal" style="display:none">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Create New Shipment</h2>
+                <button class="modal-close" id="closeModal">×</button>
+            </div>
+            <form id="shipmentForm" class="form-grid">
+                <div class="form-group">
+                    <label>Shipment #</label>
+                    <input type="text" name="Shipment_Number" placeholder="SM-12345" required>
+                </div>
+                <div class="form-group">
+                    <label>Route</label>
+                    <input type="text" name="Route_Details" placeholder="NY → LA" required>
+                </div>
+                <div class="form-group">
+                    <label>Device</label>
+                    <input type="text" name="Device" placeholder="Device001" required>
+                </div>
+                <div class="form-group">
+                    <label>PO Number</label>
+                    <input type="text" name="Po_Number" placeholder="PO-123456" required>
+                </div>
+                <div class="form-group">
+                    <label>NDC Number</label>
+                    <input type="text" name="NDC_Number" placeholder="7741" required>
+                </div>
+                <div class="form-group">
+                    <label>Serial #</label>
+                    <input type="text" name="Serial_Number_of_Goods" placeholder="SN-999" required>
+                </div>
+                <div class="form-group">
+                    <label>Container #</label>
+                    <input type="text" name="Container_number" placeholder="CNT-555" required>
+                </div>
+                <div class="form-group">
+                    <label>Goods Type</label>
+                    <input type="text" name="Goods_Type" placeholder="Electronics" required>
+                </div>
+                <div class="form-group">
+                    <label>Expected Delivery</label>
+                    <input type="datetime-local" name="Expected_Delivery_Date" required>
+                </div>
+                <div class="form-group">
+                    <label>Delivery #</label>
+                    <input type="text" name="delivery_number" placeholder="DEL-888" required>
+                </div>
+                <div class="form-group">
+                    <label>Batch ID</label>
+                    <input type="text" name="Batch_ID" placeholder="B-99" required>
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea name="Shipment_Description" placeholder="Details about this shipment..." required></textarea>
+                </div>
+                <div style="grid-column:1/-1;display:flex;gap:10px">
+                    <button type="submit" class="btn-primary">Create Shipment</button>
+                    <button type="button" class="btn-outline" id="cancelModal">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="/static/app.js" defer></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // no localStorage auth — server handles it via cookie
+            document.getElementById('newShipmentBtn').addEventListener('click', () => {
+                document.getElementById('shipmentModal').style.display = 'block';
+            });
+
+            document.getElementById('closeModal').addEventListener('click', () => {
+                document.getElementById('shipmentModal').style.display = 'none';
+            });
+
+            document.getElementById('cancelModal').addEventListener('click', () => {
+                document.getElementById('shipmentModal').style.display = 'none';
+            });
+
+            document.getElementById('shipmentForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const formData = new FormData(e.target);
+
+                try {
+                    const res = await fetch('/shipments', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    if (!res.ok) {
+                        alert('Failed to create shipment: ' + (await res.text()));
+                        return;
+                    }
+
+                    alert('Shipment created!');
+                    document.getElementById('shipmentModal').style.display = 'none';
+                    document.getElementById('shipmentForm').reset();
+                } catch (err) {
+                    console.error(err);
+                    alert('Error creating shipment');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
