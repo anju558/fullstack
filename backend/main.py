@@ -1,11 +1,11 @@
-from fastapi import FastAPI, Request, Form, HTTPException, status
+from fastapi import FastAPI, Request, Form, HTTPException, status, Depends
 from fastapi.responses import RedirectResponse, HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pathlib import Path
 from jose import JWTError, jwt
 from datetime import datetime, timedelta
-from models import Shipment
+from fastapi.security import OAuth2PasswordBearer
 import re
 
 # DB helpers
@@ -14,11 +14,44 @@ from auth import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES, create_acce
 
 BASE_DIR = Path(__file__).resolve().parent
 
-app = FastAPI(title="SCMXPERTLITE", version="1.0.0")
+# ✅ Explicitly enable docs (optional but clear)
+app = FastAPI(
+    title="SCMXPERTLITE",
+    version="1.0.0",
+    docs_url="/docs",
+    redoc_url="/redoc",
+    openapi_url="/openapi.json"
+)
 
 # Mount static files and configure templates
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
+
+
+# ✅ Properly decode JWT and return email
+async def get_current_user_email(token: str = Depends(oauth2_scheme)) -> str:
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        email: str = payload.get("email")
+        if email is None:
+            raise credentials_exception
+        return email
+    except JWTError:
+        raise credentials_exception
+    
+
+
+@app.get("/devices")
+async def get_devices():
+    devices = list(shipments_col.find({}, {"_id": 0}))
+    return {"devices": devices}
 
 
 def decode_token(token: str):
@@ -40,7 +73,6 @@ def login_page(request: Request):
 
 @app.post("/login")
 async def login(request: Request, username: str = Form(...), password: str = Form(...)):
-    # username is email in the forms
     user = users_col.find_one({"email": username})
     if not user or not verify_password(password, user["password_hash"]):
         return templates.TemplateResponse("login.html", {"request": request, "error": "Invalid email or password."}, status_code=401)
@@ -73,7 +105,8 @@ async def signup(request: Request, username: str = Form(...), email: str = Form(
         errors.append("Password must contain at least one lowercase letter.")
     if not re.search(r"[0-9]", password):
         errors.append("Password must contain at least one digit.")
-    if not re.search(r"[!@#$%^&*()_+\-=[\]{};':\"\\|,.<>\/?)", password):
+    # ✅ FIXED: Proper regex for special chars (closed bracket, escaped \ and ])
+    if not re.search(r"[!@#$%^&*()_+\-=\[\]{};':\"\\|,.<>/?]", password):
         errors.append("Password must contain at least one special character.")
 
     if users_col.find_one({"email": email}):

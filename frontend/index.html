@@ -3,9 +3,9 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>ShipTrack — Smart Shipment Tracking</title>
+    <title>ShipTrack - Smart Shipment Tracking</title>
     <meta name="description" content="ShipTrack — lightweight shipment tracking and admin dashboard." />
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
     <header class="site-header">
@@ -17,7 +17,7 @@
           <a href="#pricing">Pricing</a>
           <a class="btn-outline" href="login.html">Sign in</a>
         </nav>
-        <button id="navToggle" class="hamburger" aria-label="Toggle navigation">☰</button>
+        <button id="navToggle" class="hamburger" aria-label="Toggle navigation"></button>
       </div>
     </header>
 
@@ -26,13 +26,14 @@
         <div class="container hero-grid">
           <div class="hero-left">
             <h1>Track shipments smarter. Move faster.</h1>
-            <p class="lead">Simple, secure shipment tracking and management for small teams. Real-time updates, batch imports, and role-based access.</p>
+            <p class="lead">
+              Simple, secure shipment tracking and management for small teams. Real-time updates, batch imports, and role-based access.
+            </p>
 
             <div class="cta-row">
               <a class="btn-primary" href="login.html">Get started — free</a>
               <a class="btn-ghost" href="#features">Learn more</a>
             </div>
-
           </div>
 
           <div class="hero-right" aria-hidden="true">
@@ -77,33 +78,7 @@
         </div>
       </section>
 
-      <section id="pricing" class="pricing container">
-        <h2>Pricing</h2>
-        <div class="pricing-grid">
-          <div class="price-card popular">
-            <h3>Starter</h3>
-            <p class="price">Free</p>
-            <ul>
-              <li>Up to 3 users</li>
-              <li>Basic tracking</li>
-              <li>Email support</li>
-            </ul>
-            <a class="btn-primary" href="login.html">Start free</a>
-          </div>
-
-          <div class="price-card">
-            <h3>Business</h3>
-            <p class="price">$29 / mo</p>
-            <ul>
-              <li>Unlimited users</li>
-              <li>API access</li>
-              <li>Priority support</li>
-            </ul>
-            <a class="btn-outline" href="#">Contact sales</a>
-          </div>
-        </div>
-      </section>
-
+      
     </main>
 
     <footer class="site-footer">
@@ -113,6 +88,31 @@
       </div>
     </footer>
 
-    <script src="app.js" defer></script>
+    <!-- ✅ Fix: robust fetch error handling -->
+    <script>
+      document.addEventListener("submit", async (e) => {
+        if (!e.target.matches("form")) return;
+        e.preventDefault();
+
+        const email = document.querySelector("#email")?.value || "test@example.com";
+        const password = document.querySelector("#password")?.value || "123456";
+
+        try {
+          const res = await fetch("http://localhost:5000/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, password }),
+          });
+
+          if (!res.ok) throw new Error(`Server error: ${res.status}`);
+          const data = await res.json();
+          console.log("✅ Login success:", data);
+          alert("Login successful!");
+        } catch (err) {
+          console.error("❌ Fetch failed:", err);
+          alert("⚠️ Unable to connect to the server. Make sure the backend is running and CORS is enabled.");
+        }
+      });
+    </script>
   </body>
 </html>

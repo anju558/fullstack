@@ -30,3 +30,13 @@ def verify_token(token: str = Depends(oauth2_scheme)):
         return username
     except JWTError:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token or expired.")
+def get_current_user_email(token: str = Depends(oauth2_scheme)) -> str:
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        email: str = payload.get("email")
+        if email is None:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token.")
+        return email
+    except JWTError:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token or expired.")
+    
