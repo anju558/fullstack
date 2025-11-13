@@ -158,21 +158,24 @@
                             'Content-Type': 'application/json',
                             'Authorization': 'Bearer ' + token
                         },
+                        credentials: 'include',
                         body: JSON.stringify(shipment)
                     });
 
                     if (!res.ok) {
-                        alert('Failed to create shipment: ' + (await res.text()));
+                        const errorText = await res.text();
+                        console.error('Server error:', errorText);
+                        alert('❌ Failed to create shipment: ' + errorText);
                         return;
                     }
 
-                    alert('Shipment created!');
+                    alert('✅ Shipment created successfully!');
                     document.getElementById('shipmentModal').style.display = 'none';
                     document.getElementById('shipmentForm').reset();
                     loadShipments();
                 } catch (err) {
-                    console.error(err);
-                    alert('Error creating shipment');
+                    console.error('Network error:', err);
+                    alert('❌ Error creating shipment: ' + err.message);
                 }
             });
 

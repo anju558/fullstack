@@ -14,7 +14,7 @@
                 <p>Securely sign in to manage shipments and tracking</p>
             </div>
 
-            <form id="loginForm" class="auth-form">
+            <form id="loginForm" class="auth-form" method="post" action="http://127.0.0.1:8000/login">
                 <div class="form-group">
                     <label for="email">Email</label>
                     <input type="email" id="email" name="username" placeholder="you@example.com" required>
@@ -61,39 +61,29 @@
                 }
             });
 
-            // Form submission
-            form.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const email = document.getElementById('email').value;
+            // Form submission: do client-side validation and let the browser submit the form
+            form.addEventListener('submit', (e) => {
+                const email = document.getElementById('email').value.trim();
                 const password = document.getElementById('password').value;
 
-                try {
-                    const payload = new URLSearchParams();
-                    payload.append('username', email);
-                    payload.append('password', password);
-
-                    const res = await fetch('http://127.0.0.1:8000/login', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                        body: payload.toString()
-                    });
-
-                    if (!res.ok) {
-                        const err = await res.json();
-                        alert('Login failed: ' + (err.detail || 'Invalid credentials'));
-                        return;
-                    }
-
-                    const data = await res.json();
-                    if (data.access_token) {
-                        localStorage.setItem('access_token', data.access_token);
-                        localStorage.setItem('token_type', data.token_type);
-                        window.location.href = 'dashboard.html';
-                    }
-                } catch (err) {
-                    console.error(err);
-                    alert('Network error. Make sure backend is running on http://127.0.0.1:8000');
+                if (!email || !password) {
+                    e.preventDefault();
+                    alert('❌ Please fill in all fields');
+                    return;
                 }
+
+                // If valid, allow the browser to submit the form to the server endpoint
+                // Server will set cookies and redirect to /dashboard upon success
+            });
+
+            // Clear errors on input
+            form.querySelectorAll('input').forEach(input => {
+                input.addEventListener('input', () => {
+                    input.style.borderColor = 'rgba(255,255,255,0.06)';
+                    const errorId = input.id + 'Error';
+                    const errorEl = document.getElementById(errorId);
+                    if(errorEl) errorEl.textContent = '';
+                });
             });
         });
     </script>

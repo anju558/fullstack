@@ -14,7 +14,7 @@
                 <p>Join 500+ companies tracking smarter</p>
             </div>
 
-            <form id="signupForm" class="auth-form">
+            <form id="signupForm" class="auth-form" method="post" action="http://127.0.0.1:8000/signup">
                 <div class="form-group">
                     <label for="username">Username</label>
                     <input type="text" id="username" name="username" placeholder="your_username" required minlength="4">
@@ -111,13 +111,15 @@
                 }
             });
 
-            // Form submission
-            form.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const username = document.getElementById('username').value;
-                const email = document.getElementById('email').value;
+            // Form submission: client-side validation only, then allow native form submit to backend
+            form.addEventListener('submit', (e) => {
+                const username = document.getElementById('username').value.trim();
+                const email = document.getElementById('email').value.trim();
                 const password = document.getElementById('password').value;
                 const confirm = document.getElementById('confirm_password').value;
+
+                // Clear all previous errors
+                document.querySelectorAll('.error').forEach(el => el.textContent = '');
 
                 // Validation
                 let hasError = false;
@@ -134,40 +136,34 @@
                     hasError = true;
                 }
                 if (!/[A-Z]/.test(password)) {
-                    document.getElementById('passwordError').textContent += (document.getElementById('passwordError').textContent ? ' and ' : '') + 'must contain uppercase';
+                    const msg = document.getElementById('passwordError');
+                    msg.textContent = (msg.textContent ? msg.textContent + '; ' : '') + 'must contain uppercase';
                     hasError = true;
                 }
                 if (!/[0-9]/.test(password)) {
-                    document.getElementById('passwordError').textContent += (document.getElementById('passwordError').textContent ? ' and ' : '') + 'must contain a number';
+                    const msg = document.getElementById('passwordError');
+                    msg.textContent = (msg.textContent ? msg.textContent + '; ' : '') + 'must contain a number';
                     hasError = true;
                 }
                 if (!/[!@#$%^&*]/.test(password)) {
-                    document.getElementById('passwordError').textContent += (document.getElementById('passwordError').textContent ? ' and ' : '') + 'must contain special char';
+                    const msg = document.getElementById('passwordError');
+                    msg.textContent = (msg.textContent ? msg.textContent + '; ' : '') + 'must contain special char';
                     hasError = true;
                 }
 
-                if (hasError) return;
-
-                try {
-                    const res = await fetch('http://127.0.0.1:8000/signup?username=' + encodeURIComponent(username) + '&email=' + encodeURIComponent(email) + '&password=' + encodeURIComponent(password) + '&confirm_password=' + encodeURIComponent(confirm), {
-                        method: 'POST'
-                    });
-
-                    if (!res.ok) {
-                        const err = await res.json();
-                        alert('Signup failed: ' + (err.detail || 'Unknown error'));
-                        return;
-                    }
-
-                    document.getElementById('successMsg').style.display = 'block';
-                    form.style.display = 'none';
-                    setTimeout(() => {
-                        window.location.href = 'login.html';
-                    }, 1500);
-                } catch (err) {
-                    console.error(err);
-                    alert('Network error. Make sure backend is running on http://127.0.0.1:8000');
+                if (hasError) {
+                    e.preventDefault();
+                    return;
                 }
+
+                // If valid, allow native form submit to /signup so backend can set cookies and redirect
+            });
+
+            // Clear errors on input
+            form.querySelectorAll('input').forEach(input => {
+                input.addEventListener('input', () => {
+                    input.style.borderColor = 'rgba(255,255,255,0.06)';
+                });
             });
         });
     </script>

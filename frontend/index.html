@@ -98,19 +98,19 @@
         const password = document.querySelector("#password")?.value || "123456";
 
         try {
-          const res = await fetch("http://localhost:5000/login", {
+          const res = await fetch("http://127.0.0.1:8000/login", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email, password }),
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            credentials: "include",
+            body: new URLSearchParams({ username: email, password }),
           });
 
           if (!res.ok) throw new Error(`Server error: ${res.status}`);
-          const data = await res.json();
-          console.log("✅ Login success:", data);
-          alert("Login successful!");
+          console.log("✅ Login success");
+          setTimeout(() => { window.location.href = "/dashboard"; }, 500);
         } catch (err) {
           console.error("❌ Fetch failed:", err);
-          alert("⚠️ Unable to connect to the server. Make sure the backend is running and CORS is enabled.");
+          alert("⚠️ Unable to connect to the server. Make sure the backend is running on http://127.0.0.1:8000");
         }
       });
     </script>

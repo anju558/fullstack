@@ -2,6 +2,7 @@ from fastapi import FastAPI, Request, Form, HTTPException, status, Depends
 from fastapi.responses import RedirectResponse, HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from fastapi.middleware.cors import CORSMiddleware
 from pathlib import Path
 from jose import JWTError, jwt
 from datetime import datetime, timedelta
@@ -14,7 +15,6 @@ from auth import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES, create_acce
 
 BASE_DIR = Path(__file__).resolve().parent
 
-# ✅ Explicitly enable docs (optional but clear)
 app = FastAPI(
     title="SCMXPERTLITE",
     version="1.0.0",
@@ -23,14 +23,22 @@ app = FastAPI(
     openapi_url="/openapi.json"
 )
 
-# Mount static files and configure templates
+# Enable CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Mount static + templates
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
-
-# ✅ Properly decode JWT and return email
+# Decode JWT
 async def get_current_user_email(token: str = Depends(oauth2_scheme)) -> str:
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -45,13 +53,20 @@ async def get_current_user_email(token: str = Depends(oauth2_scheme)) -> str:
         return email
     except JWTError:
         raise credentials_exception
-    
 
 
-@app.get("/devices")
-async def get_devices():
+@app.get("/api/devices")
+async def get_devices_api():
+    # JSON API used by client-side polling/JS
     devices = list(shipments_col.find({}, {"_id": 0}))
     return {"devices": devices}
+
+
+@app.get("/devices", response_class=HTMLResponse)
+def devices_page(request: Request):
+    # Render server page that lists devices and links to stream pages
+    devices = list(shipments_col.find({}, {"_id": 0}))
+    return templates.TemplateResponse("devices.html", {"request": request, "devices": devices})
 
 
 def decode_token(token: str):
@@ -66,14 +81,17 @@ def index(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
 
+# ✅ Both /login and /login.html supported
 @app.get("/login", response_class=HTMLResponse)
+@app.get("/login.html", response_class=HTMLResponse)
 def login_page(request: Request):
     return templates.TemplateResponse("login.html", {"request": request})
 
 
 @app.post("/login")
 async def login(request: Request, username: str = Form(...), password: str = Form(...)):
-    user = users_col.find_one({"email": username})
+    lookup_email = username.strip().lower()
+    user = users_col.find_one({"email": lookup_email})
     if not user or not verify_password(password, user["password_hash"]):
         return templates.TemplateResponse("login.html", {"request": request, "error": "Invalid email or password."}, status_code=401)
 
@@ -83,7 +101,9 @@ async def login(request: Request, username: str = Form(...), password: str = For
     return resp
 
 
+# ✅ Both /signup and /signup.html supported
 @app.get("/signup", response_class=HTMLResponse)
+@app.get("/signup.html", response_class=HTMLResponse)
 def signup_page(request: Request):
     return templates.TemplateResponse("signup.html", {"request": request})
 
@@ -91,10 +111,12 @@ def signup_page(request: Request):
 @app.post("/signup")
 async def signup(request: Request, username: str = Form(...), email: str = Form(...), password: str = Form(...), confirm_password: str = Form(...)):
     errors = []
+    email = email.strip().lower()
+
     if len(username) <= 3:
         errors.append("Username must be more than 3 characters.")
-    if "@" not in email or not email.endswith(".com"):
-        errors.append("Invalid email: must contain '@' and end with '.com'.")
+    if "@" not in email or "." not in email.split('@')[-1]:
+        errors.append("Invalid email address.")
     if password != confirm_password:
         errors.append("Password does not match.")
     if len(password) < 8:
@@ -105,7 +127,6 @@ async def signup(request: Request, username: str = Form(...), email: str = Form(
         errors.append("Password must contain at least one lowercase letter.")
     if not re.search(r"[0-9]", password):
         errors.append("Password must contain at least one digit.")
-    # ✅ FIXED: Proper regex for special chars (closed bracket, escaped \ and ])
     if not re.search(r"[!@#$%^&*()_+\-=\[\]{};':\"\\|,.<>/?]", password):
         errors.append("Password must contain at least one special character.")
 
@@ -157,13 +178,94 @@ def dashboard(request: Request):
     return templates.TemplateResponse("dashboard.html", {"request": request, "username": user.get("username")})
 
 
+@app.get("/create-shipment", response_class=HTMLResponse)
+def create_shipment_page(request: Request):
+    # Only authenticated users can create shipments
+    user = get_current_user_from_request(request)
+    if not user:
+        return RedirectResponse(url="/login")
+
+    # Generate a short-lived captcha token (simple math) using access token helper
+    import random
+    from datetime import timedelta as _td
+
+    a = random.randint(1, 9)
+    b = random.randint(1, 9)
+    captcha_question = f"{a} + {b} = ?"
+    captcha_token = create_access_token({"captcha": a + b}, expires_delta=_td(minutes=5))
+
+    return templates.TemplateResponse("create_shipment.html", {"request": request, "captcha_question": captcha_question, "captcha_token": captcha_token})
+
+
+@app.post("/create-shipment")
+async def create_shipment_handler(request: Request):
+    user = get_current_user_from_request(request)
+    if not user:
+        return RedirectResponse(url="/login")
+
+    form = await request.form()
+    # verify captcha
+    captcha_answer = form.get("captcha_answer")
+    captcha_token = form.get("captcha_token")
+    payload = decode_token(captcha_token) if captcha_token else None
+    if not payload or str(payload.get("captcha")) != str(captcha_answer):
+        # Return to form with an error
+        return templates.TemplateResponse("create_shipment.html", {"request": request, "error": "Invalid or expired captcha. Please try again."}, status_code=400)
+
+    # Build shipment object from form (preserve same field names used in dashboard modal)
+    shipment = dict(form)
+    # remove captcha fields
+    shipment.pop("captcha_answer", None)
+    shipment.pop("captcha_token", None)
+
+    shipment["created_by_email"] = user["email"]
+    shipment["created_at"] = datetime.utcnow()
+    shipments_col.insert_one(shipment)
+
+    # Redirect to my-shipments instead of dashboard
+    return RedirectResponse(url="/my-shipments", status_code=302)
+
+
+@app.get("/my-shipments", response_class=HTMLResponse)
+def my_shipments_page(request: Request):
+    user = get_current_user_from_request(request)
+    if not user:
+        return RedirectResponse(url="/login")
+    return templates.TemplateResponse("my_shipments.html", {"request": request, "username": user.get("username")})
+
+
+@app.get("/api/my-shipments")
+async def get_my_shipments(request: Request):
+    user = get_current_user_from_request(request)
+    if not user:
+        return JSONResponse({"detail": "Not authenticated"}, status_code=401)
+    
+    shipments = list(shipments_col.find({"created_by_email": user["email"]}, {"_id": 0}))
+    return {"shipments": shipments}
+
+
+@app.get("/view-stream", response_class=HTMLResponse)
+def view_stream_page(request: Request):
+    user = get_current_user_from_request(request)
+    if not user:
+        return RedirectResponse(url="/login")
+    return templates.TemplateResponse("view_stream.html", {"request": request})
+
+
+@app.get("/device-stream/{device_id}", response_class=HTMLResponse)
+def device_stream_page(request: Request, device_id: str):
+    # Render a page that polls the API for device updates and shows details
+    # Try to find a representative device record (if any)
+    device_doc = shipments_col.find_one({"Device": device_id}, {"_id": 0})
+    return templates.TemplateResponse("device_stream.html", {"request": request, "device": device_doc, "device_id": device_id})
+
+
 @app.post("/shipments")
 async def create_shipment(request: Request):
     user = get_current_user_from_request(request)
     if not user:
         return JSONResponse({"detail": "Not authenticated"}, status_code=401)
 
-    # Accept form or JSON
     if request.headers.get("content-type", "").startswith("application/json"):
         payload = await request.json()
     else:

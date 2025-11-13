@@ -25,8 +25,11 @@ body{
 .brand{font-weight:800;color:var(--accent);font-size:20px;text-decoration:none}
 .nav{display:flex;gap:18px;align-items:center}
 .nav a{color:var(--muted);text-decoration:none}
-.btn-primary{background:linear-gradient(90deg,var(--accent),var(--accent-2));padding:10px 14px;border-radius:10px;color:#032;display:inline-block;text-decoration:none;font-weight:700}
-.btn-outline{padding:8px 12px;border-radius:10px;border:1px solid rgba(255,255,255,0.06);color:var(--muted);text-decoration:none}
+.btn-primary{background:linear-gradient(90deg,var(--accent),var(--accent-2));padding:10px 14px;border-radius:10px;color:#032;display:inline-block;text-decoration:none;font-weight:700;border:none;cursor:pointer;transition:all .2s ease}
+.btn-primary:hover{opacity:0.9;transform:translateY(-2px);box-shadow:0 8px 20px rgba(96,224,196,0.3)}
+.btn-primary:active{transform:translateY(0)}
+.btn-outline{padding:8px 12px;border-radius:10px;border:1px solid rgba(255,255,255,0.06);color:var(--muted);text-decoration:none;background:transparent;cursor:pointer;transition:all .2s ease}
+.btn-outline:hover{border-color:var(--accent);color:var(--accent);background:rgba(96,224,196,0.05)}
 .hamburger{display:none;background:transparent;border:0;color:var(--muted);font-size:20px}
 
 /* Hero */
@@ -101,13 +104,17 @@ a.btn-primary:hover{opacity:0.95}
   background:rgba(255,255,255,0.02);color:inherit;font-size:14px;font-family:inherit
 }
 .form-group input:focus, .form-group textarea:focus, .form-group select:focus{
-  outline:none;border-color:var(--accent);background:rgba(255,255,255,0.04)
+  outline:none;border-color:var(--accent);background:rgba(255,255,255,0.04);box-shadow:0 0 0 3px rgba(96,224,196,0.1)
 }
+.form-group input:invalid{border-color:#ef4444}
 .form-group.checkbox{flex-direction:row;align-items:center;gap:8px}
 .form-group.checkbox input{margin:0;width:auto}
 .form-group.checkbox label{margin:0}
-.error{color:#ef4444;font-size:12px;display:none}
+.error{color:#ef4444;font-size:12px;display:none;margin-top:4px}
 .error:not(:empty){display:block}
+.server-error{background:rgba(239,68,68,0.1);color:#ef4444;padding:12px;border-radius:10px;border:1px solid rgba(239,68,68,0.2);margin-bottom:12px}
+.server-error ul{margin:0;padding-left:20px}
+.server-error li{margin:4px 0}
 .success-msg{background:rgba(16,185,129,0.1);color:#10b981;padding:12px;border-radius:10px;border:1px solid rgba(16,185,129,0.2);margin-top:12px}
 .toggle-pw{position:absolute;right:8px;top:50%;transform:translateY(-50%);background:transparent;border:0;cursor:pointer;color:var(--muted);padding:6px}
 .password-meter{height:4px;background:rgba(255,255,255,0.05);border-radius:999px;overflow:hidden;margin-top:4px}

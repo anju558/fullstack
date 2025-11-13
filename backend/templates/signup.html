@@ -79,6 +79,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             const pwInput = document.getElementById('password');
             const meterBar = document.getElementById('meterBar');
+            const form = document.getElementById('signupForm');
 
             // Password strength meter
             pwInput.addEventListener('input', () => {
@@ -118,6 +119,13 @@
                     input.type = 'password';
                     btn.textContent = '👁';
                 }
+            });
+
+            // Clear errors on input
+            form.querySelectorAll('input').forEach(input => {
+                input.addEventListener('input', () => {
+                    input.style.borderColor = 'rgba(255,255,255,0.06)';
+                });
             });
         });
     </script>
