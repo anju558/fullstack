@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>View Stream — ShipTrack</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body class="page">
+    <div class="page-container">
+        <header class="page-header">
+            <a href="/dashboard" class="btn-back">← Back to Dashboard</a>
+            <h1>Live Device Stream</h1>
+        </header>
+
+        <main class="page-main">
+            <div class="stream-controls">
+                <label>Device:</label>
+                <select id="deviceSelect" class="filter-select">
+                    <option value="">-- All Devices --</option>
+                </select>
+                <button id="refreshBtn" class="btn-primary">Refresh</button>
+            </div>
+
+            <div id="streamContainer" class="stream-container">
+                <div class="stream-area">
+                    <p class="loading">Loading stream data...</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="/static/app.js" defer></script>
+</body>
+</html>

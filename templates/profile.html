@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>My Profile — ShipTrack</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+
+<body>
+    <div class="page">
+        <div class="page-container">
+            <div class="page-header">
+                <h1>👤 My Profile</h1>
+                <a href="/dashboard" class="btn-back">← Back to Dashboard</a>
+            </div>
+
+            <div class="profile-card">
+                <div id="profileContent" class="loading">
+                    ⏳ Loading your profile information...
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 12px; justify-content: center; margin-top: 30px;">
+                <a href="/dashboard" class="btn-secondary">← Dashboard</a>
+                <a href="/logout" class="btn-secondary">Logout</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- PROFILE PAGE SCRIPT                         -->
+    <!-- ============================================ -->
+    <!-- 
+         This script loads user profile data from the /api/profile endpoint
+         and displays it in the profile-field divs below
+    -->
+    <script>
+        /**
+         * Load user profile from /api/profile endpoint
+         * This function is called on page load
+         */
+        async function loadProfile() {
+            const profileContent = document.getElementById('profileContent');
+            
+            try {
+                // Fetch profile data from API
+                const response = await fetch('/api/profile');
+                
+                // Handle unauthorized (redirect to login)
+                if (response.status === 401) {
+                    window.location.href = '/login';
+                    return;
+                }
+                
+                // Handle other errors
+                if (!response.ok) {
+                    throw new Error(`Server error: ${response.status}`);
+                }
+                
+                // Parse response
+                const data = await response.json();
+                
+                // Display profile data with HTML escaping for security
+                profileContent.innerHTML = `
+                    <div class="profile-field">
+                        <span class="profile-label">Username</span>
+                        <span class="profile-value">${escapeHtml(data.username)}</span>
+                    </div>
+
+                    <div class="profile-field">
+                        <span class="profile-label">Email Address</span>
+                        <span class="profile-value">${escapeHtml(data.email)}</span>
+                    </div>
+
+                    <div class="profile-field">
+                        <span class="profile-label">User ID</span>
+                        <span class="profile-value">${escapeHtml(data.id)}</span>
+                    </div>
+
+                    <div class="profile-field">
+                        <span class="profile-label">Member Since</span>
+                        <span class="profile-value">${formatDate(data.created_at)}</span>
+                    </div>
+                `;
+                
+                console.log('✅ Profile loaded successfully');
+            } catch (error) {
+                console.error('❌ Profile error:', error);
+                profileContent.innerHTML = `
+                    <div class="error">
+                        ❌ Error loading profile: ${escapeHtml(error.message)}
+                    </div>
+                `;
+            }
+        }
+
+        /**
+         * Format ISO date string to readable format
+         * Example: "2024-01-15T10:30:00" -> "January 15, 2024 at 10:30 AM"
+         */
+        function formatDate(isoString) {
+            if (!isoString) return 'N/A';
+            try {
+                const date = new Date(isoString);
+                return date.toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            } catch (error) {
+                return isoString;
+            }
+        }
+
+        /**
+         * Escape HTML special characters to prevent XSS attacks
+         * Converts: & < > " ' to HTML entities
+         */
+        function escapeHtml(text) {
+            if (!text) return '';
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return String(text).replace(/[&<>"']/g, m => map[m]);
+        }
+
+        // Load profile when page loads
+        document.addEventListener('DOMContentLoaded', loadProfile);
+    </script>
+</body>
+</html>
