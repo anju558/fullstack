@@ -4,16 +4,28 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.middleware.cors import CORSMiddleware
 from pathlib import Path
-from jose import JWTError, jwt
+
 from datetime import datetime, timedelta
 from fastapi.security import OAuth2PasswordBearer
 import re
 
-# DB helpers
-from database import users_col, shipments_col, hash_password, verify_password
-from auth import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES, create_access_token
+from jose import JWTError
+import jwt
 
-BASE_DIR = Path(__file__).resolve().parent
+# DB helpers
+from main import BASE_DIR
+from database import hash_password, verify_password
+from auth import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES, create_access_token
+import os
+import bcrypt
+from dotenv import load_dotenv
+
+load_dotenv()
+
+mongodb_uri = os.getenv("MONGO_URI")
+users_col = os.getenv("USERS_COLLECTION")
+shipments_col = os.getenv("SHIPMENTS_COLLECTION")  
+
 
 app = FastAPI(
     title="SCMXPERTLITE",
@@ -21,15 +33,6 @@ app = FastAPI(
     docs_url="/docs",
     redoc_url="/redoc",
     openapi_url="/openapi.json"
-)
-
-# Enable CORS
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
 )
 
 # Mount static + templates
@@ -178,6 +181,28 @@ def dashboard(request: Request):
     return templates.TemplateResponse("dashboard.html", {"request": request, "username": user.get("username")})
 
 
+@app.get("/profile", response_class=HTMLResponse)
+def profile_page(request: Request):
+    user = get_current_user_from_request(request)
+    if not user:
+        return RedirectResponse(url="/login")
+    return templates.TemplateResponse("profile.html", {"request": request, "username": user.get("username")})
+
+
+@app.get("/api/profile")
+async def get_profile(request: Request):
+    user = get_current_user_from_request(request)
+    if not user:
+        return JSONResponse({"detail": "Not authenticated"}, status_code=401)
+    
+    return {
+        "username": user.get("username"),
+        "email": user.get("email"),
+        "created_at": user.get("created_at").isoformat() if user.get("created_at") else None,
+        "id": str(user.get("_id"))
+    }
+
+
 @app.get("/create-shipment", response_class=HTMLResponse)
 def create_shipment_page(request: Request):
     # Only authenticated users can create shipments
@@ -258,21 +283,3 @@ def device_stream_page(request: Request, device_id: str):
     # Try to find a representative device record (if any)
     device_doc = shipments_col.find_one({"Device": device_id}, {"_id": 0})
     return templates.TemplateResponse("device_stream.html", {"request": request, "device": device_doc, "device_id": device_id})
-
-
-@app.post("/shipments")
-async def create_shipment(request: Request):
-    user = get_current_user_from_request(request)
-    if not user:
-        return JSONResponse({"detail": "Not authenticated"}, status_code=401)
-
-    if request.headers.get("content-type", "").startswith("application/json"):
-        payload = await request.json()
-    else:
-        form = await request.form()
-        payload = dict(form)
-
-    payload["created_by_email"] = user["email"]
-    payload["created_at"] = datetime.utcnow()
-    result = shipments_col.insert_one(payload)
-    return {"id": str(result.inserted_id)}

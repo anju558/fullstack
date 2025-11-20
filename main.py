@@ -10,8 +10,8 @@ from fastapi.security import OAuth2PasswordBearer
 import re
 
 # DB helpers
-from database import users_col, shipments_col, hash_password, verify_password
-from auth import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES, create_access_token
+from backend.database import users_col, shipments_col, hash_password, verify_password
+from backend.auth import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES, create_access_token
 
 BASE_DIR = Path(__file__).resolve().parent
 
