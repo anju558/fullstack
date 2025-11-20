@@ -4,6 +4,18 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
+<<<<<<< HEAD
+=======
+        
+        {
+            "name": "Attach to Chrome",
+            "port": 9222,
+            "request": "attach",
+            "type": "chrome",
+            "webRoot": "${workspaceFolder}"
+        },
+
+>>>>>>> c0dec9c98cd39b4d5a749bd0a276da4e2180991a
         {
             "name": "Python Debugger: Current File",
             "type": "debugpy",
@@ -12,6 +24,7 @@
             "console": "integratedTerminal"
         },
         {
+<<<<<<< HEAD
             "name": "Attach to Chrome",
             "port": 9222,
             "request": "attach",
@@ -24,6 +37,13 @@
             "request": "launch",
             "url": "http://localhost:3000",
             "webRoot": "${workspaceFolder}"
+=======
+            "name": "Python Debugger: Current File",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal"
+>>>>>>> c0dec9c98cd39b4d5a749bd0a276da4e2180991a
         }
     ]
 }

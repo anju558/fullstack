@@ -39,4 +39,8 @@ def get_current_user_email(token: str = Depends(oauth2_scheme)) -> str:
         return email
     except JWTError:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token or expired.")
+<<<<<<< HEAD
     
+=======
+    
+>>>>>>> c0dec9c98cd39b4d5a749bd0a276da4e2180991a

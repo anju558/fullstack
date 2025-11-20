@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Full Stack Supply Chain Management System
 
 A complete full-stack application for real-time supply chain management with Docker orchestration, Kafka streaming, MongoDB persistence, and FastAPI backend.
@@ -479,3 +480,9 @@ Then visit: **http://localhost:8000**
 **Last Updated**: November 15, 2025
 
 **Version**: 1.0.0
+=======
+# fullstack
+website
+hi this is anjali
+i am doing fullstack project
+>>>>>>> c0dec9c98cd39b4d5a749bd0a276da4e2180991a
