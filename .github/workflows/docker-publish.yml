@@ -75,7 +75,8 @@ jobs:
         with:
           host: "13.204.65.46"
           username: "ubuntu"
-          key: "-----BEGIN RSA PRIVATE KEY-----
+          key: |
+            -----BEGIN RSA PRIVATE KEY-----
             MIIEpAIBAAKCAQEA11Rg7CgtGehPeq+iuG8F76+vJfyc4ZMD5CnDf+f3xQe4YJwb
             pWBrfibhUma1ryfa+8tpMBdRYPw6jG/kxG6Ol/NnfpAcZOyDOW+cV29m3tWrHJwC
             Ew1IctehhqmpJ03dAYRdveXVxPhn8fyzvxwUcfpBMZ6DSWGe8m9wpWy0FpfeOjL1
@@ -101,7 +102,7 @@ jobs:
             XZnvnwKBgQCa64OQKWQa8VbQVwvPrMM5ZzL0HsaygqDDyMmOCWCzpaxJMoxHCKJG
             FhzXKCGt0wDYyZPLBOVoN+iIIzXx5y3+DK80uN9bD4+f59BC2vkC+1s+KLuacsYv
             UoJRIApEBQzbN52xQ9t2zk8dGkXgGP/PUQUWSnYM7iNcB3ODmVOogA==
-            -----END RSA PRIVATE KEY-----"
+            -----END RSA PRIVATE KEY-----
           port: 22
           script: |
             set -e
