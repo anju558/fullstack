@@ -59,7 +59,7 @@ jobs:
   #         ${{ env.DOCKER_USERNAME }}/scm-backend:latest
 
   deploy-ec2:
-    needs: build-and-push
+    # needs: build-and-push
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
 
