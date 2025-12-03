@@ -32,7 +32,7 @@ jobs:
       uses: docker/build-push-action@v4
       with:
         context: .
-        dockerfile: dockerfile.producer
+        file: dockerfile.producer
         push: true
         tags: |
           ${{ env.DOCKER_USERNAME }}/scm-producer:${{ github.run_number }}
@@ -42,7 +42,7 @@ jobs:
       uses: docker/build-push-action@v4
       with:
         context: .
-        dockerfile: dockerfile.consumer
+        file: dockerfile.consumer
         push: true
         tags: |
           ${{ env.DOCKER_USERNAME }}/scm-consumer:${{ github.run_number }}
@@ -52,7 +52,7 @@ jobs:
       uses: docker/build-push-action@v4
       with:
         context: .
-        dockerfile: Dockerfile.application
+        file: Dockerfile.application
         push: true
         tags: |
           ${{ env.DOCKER_USERNAME }}/scm-backend:${{ github.run_number }}
