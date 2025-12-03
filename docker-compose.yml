@@ -1,5 +1,3 @@
-
-
 services:
 
   kafka:
@@ -25,11 +23,6 @@ services:
       KAFKA_CREATE_TOPICS: "sensor_data:1:1"
       KAFKA_HEAP_OPTS: "-Xmx256m -Xms256m"
 
-    volumes:
-      - ./kafka_data:/bitnami/kafka
-
-    mem_limit: 256m
-
     healthcheck:
       test: ["CMD", "kafka-topics.sh", "--bootstrap-server", "kafka:9092", "--list"]
       interval: 10s
@@ -37,26 +30,17 @@ services:
       retries: 5
 
   backend:
-    build:
-      context: .
-      dockerfile: Dockerfile.application
+    image: neha3002/scm-backend:latest
     container_name: scm_backend
-
     ports:
       - "8000:8000"
-    volumes:
-      - ./backend:/app/backend
-      - ./templates:/app/templates
-      - ./static:/app/static
     env_file:
       - .env
     command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 
 
   producer:
-    build:
-      context: .
-      dockerfile: dockerfile.producer
+    image: neha3002/scm-producer:latest
     container_name: kafka_producer
     depends_on:
       - kafka
@@ -65,9 +49,7 @@ services:
     restart: always
 
   consumer:
-    build:
-      context: .
-      dockerfile: dockerfile.consumer
+    image: neha3002/scm-consumer:latest
     container_name: kafka_consumer
     depends_on:
       - kafka
