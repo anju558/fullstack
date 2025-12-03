@@ -76,33 +76,33 @@ jobs:
           host: "13.204.65.46"
           username: "ubuntu"
           key: "-----BEGIN RSA PRIVATE KEY-----
-MIIEpAIBAAKCAQEA11Rg7CgtGehPeq+iuG8F76+vJfyc4ZMD5CnDf+f3xQe4YJwb
-pWBrfibhUma1ryfa+8tpMBdRYPw6jG/kxG6Ol/NnfpAcZOyDOW+cV29m3tWrHJwC
-Ew1IctehhqmpJ03dAYRdveXVxPhn8fyzvxwUcfpBMZ6DSWGe8m9wpWy0FpfeOjL1
-PWjABn6+7LqP3yeyXqklm8JikQDWCfY2XhTLhrLSd3eOardoKyo+tnRUGEuP9gUS
-Xg5/UYIGgTDCvH/ow0e6QKpwLjJ4BXPJuJAFuRNnEU3GqoFWpM13cR9YNEWFSXcP
-rJzdupWxMoe92iPGHRwtdfasBi2unaUGzh1rRwIDAQABAoIBAGFBGwWOn9AzvLIM
-4dGrU2MOVm0xyymW3QsQUdxTSPUUp5H68AGhqusvZFVzTlvuBFn1ZWzzGy5SvZ7w
-asLNrFm09emT7T8oE5y9bD+RcUTz/HTPgaBZP3+fJLVNq7i00jz9K9m5FPQBvfDt
-0cFfTVytSwS+M03RaZjV/Gq6zhvlZ6ltoDW9NIIfU5XH7/D9Ih2gnM5giQeL9hk7
-BuLcyRGgEZK3QHnQaN7tnVAyfTbGl7IMH5E6xMc7a8r3qL7v+MB8P87N/TF7+mwo
-i6X2nZXRc3HZY7l0/LXsN+LqWNW2QQiwXN9OSUFiVJ/AA3QL9aT7MEn8ghPzzbpv
-FCx67AECgYEA8imqfckIHtiZ/XGGNOrifiJWtjP+R2ZHoMn/FZF7DPqKWN58nJyT
-paZdUgQI2yx2eUVNg755iSSvAolzPpE+SRzkffNZwcMByDYEIVi1BurdbNpAEoXr
-OJTN8ZLVUTfL15qpTqnh3I5DWdfQ1yubF/zSgJc3g11m+B4BIXilfFECgYEA46Iz
-JGYCKruywHfsEoFNnkdeYkSkE5/jBMXEewpJGtwP0OPnrq64WuEK81uohQS1Iu5m
-l4CiVRXaC/A87j+FxxV2VEjEieQxIyXCM7v+8WnlFZXevsX/pZQ17LDhugwetJxj
-J41KA4dGQBa7BlXWpEsKHTBHft1ykHW0X/m7QBcCgYEAkd+Teg39PEeSC1+1Tm8n
-XH/m5/7N78im4S6M4DswepL5f6sWOWkAb8qVcHBJvW09OLQMi43TvE9CtS6DI29u
-q7Ah29UZfmSv0CDpwASll7MnCwk1i3LsTLsmi5y9rx0DR688ycv/6FIyNA6TGOqF
-lJ+RVjDBGfrLqi6406bPWOECgYBFLc0XGb082XA4l/lxokRBfvULLksi/6tRjvzo
-W7bd59USqcCGUOkMDWpzjP6I9mZKKGObVWeALjTm/eq2iS2R1E7yzG6WbXgVc2sy
-p8aR/Zm2VqasGaZY3tMIjLT9AqPuRbzIj2LX8auC3KWYBkxF/9wiBMMlpg0kI/Fe
-XZnvnwKBgQCa64OQKWQa8VbQVwvPrMM5ZzL0HsaygqDDyMmOCWCzpaxJMoxHCKJG
-FhzXKCGt0wDYyZPLBOVoN+iIIzXx5y3+DK80uN9bD4+f59BC2vkC+1s+KLuacsYv
-UoJRIApEBQzbN52xQ9t2zk8dGkXgGP/PUQUWSnYM7iNcB3ODmVOogA==
------END RSA PRIVATE KEY-----"
-          port: ${{ secrets.EC2_PORT || '22' }}
+            MIIEpAIBAAKCAQEA11Rg7CgtGehPeq+iuG8F76+vJfyc4ZMD5CnDf+f3xQe4YJwb
+            pWBrfibhUma1ryfa+8tpMBdRYPw6jG/kxG6Ol/NnfpAcZOyDOW+cV29m3tWrHJwC
+            Ew1IctehhqmpJ03dAYRdveXVxPhn8fyzvxwUcfpBMZ6DSWGe8m9wpWy0FpfeOjL1
+            PWjABn6+7LqP3yeyXqklm8JikQDWCfY2XhTLhrLSd3eOardoKyo+tnRUGEuP9gUS
+            Xg5/UYIGgTDCvH/ow0e6QKpwLjJ4BXPJuJAFuRNnEU3GqoFWpM13cR9YNEWFSXcP
+            rJzdupWxMoe92iPGHRwtdfasBi2unaUGzh1rRwIDAQABAoIBAGFBGwWOn9AzvLIM
+            4dGrU2MOVm0xyymW3QsQUdxTSPUUp5H68AGhqusvZFVzTlvuBFn1ZWzzGy5SvZ7w
+            asLNrFm09emT7T8oE5y9bD+RcUTz/HTPgaBZP3+fJLVNq7i00jz9K9m5FPQBvfDt
+            0cFfTVytSwS+M03RaZjV/Gq6zhvlZ6ltoDW9NIIfU5XH7/D9Ih2gnM5giQeL9hk7
+            BuLcyRGgEZK3QHnQaN7tnVAyfTbGl7IMH5E6xMc7a8r3qL7v+MB8P87N/TF7+mwo
+            i6X2nZXRc3HZY7l0/LXsN+LqWNW2QQiwXN9OSUFiVJ/AA3QL9aT7MEn8ghPzzbpv
+            FCx67AECgYEA8imqfckIHtiZ/XGGNOrifiJWtjP+R2ZHoMn/FZF7DPqKWN58nJyT
+            paZdUgQI2yx2eUVNg755iSSvAolzPpE+SRzkffNZwcMByDYEIVi1BurdbNpAEoXr
+            OJTN8ZLVUTfL15qpTqnh3I5DWdfQ1yubF/zSgJc3g11m+B4BIXilfFECgYEA46Iz
+            JGYCKruywHfsEoFNnkdeYkSkE5/jBMXEewpJGtwP0OPnrq64WuEK81uohQS1Iu5m
+            l4CiVRXaC/A87j+FxxV2VEjEieQxIyXCM7v+8WnlFZXevsX/pZQ17LDhugwetJxj
+            J41KA4dGQBa7BlXWpEsKHTBHft1ykHW0X/m7QBcCgYEAkd+Teg39PEeSC1+1Tm8n
+            XH/m5/7N78im4S6M4DswepL5f6sWOWkAb8qVcHBJvW09OLQMi43TvE9CtS6DI29u
+            q7Ah29UZfmSv0CDpwASll7MnCwk1i3LsTLsmi5y9rx0DR688ycv/6FIyNA6TGOqF
+            lJ+RVjDBGfrLqi6406bPWOECgYBFLc0XGb082XA4l/lxokRBfvULLksi/6tRjvzo
+            W7bd59USqcCGUOkMDWpzjP6I9mZKKGObVWeALjTm/eq2iS2R1E7yzG6WbXgVc2sy
+            p8aR/Zm2VqasGaZY3tMIjLT9AqPuRbzIj2LX8auC3KWYBkxF/9wiBMMlpg0kI/Fe
+            XZnvnwKBgQCa64OQKWQa8VbQVwvPrMM5ZzL0HsaygqDDyMmOCWCzpaxJMoxHCKJG
+            FhzXKCGt0wDYyZPLBOVoN+iIIzXx5y3+DK80uN9bD4+f59BC2vkC+1s+KLuacsYv
+            UoJRIApEBQzbN52xQ9t2zk8dGkXgGP/PUQUWSnYM7iNcB3ODmVOogA==
+            -----END RSA PRIVATE KEY-----"
+          port: 22
           script: |
             set -e
             cd /opt/scmlite
