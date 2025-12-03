@@ -9,7 +9,7 @@ on:
       - '.github/workflows/docker-publish.yml'
 
 env:
-  DOCKERHUB_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+  DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
 
 jobs:
   build-and-push:
