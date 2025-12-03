@@ -67,8 +67,8 @@ jobs:
       - name: check ssh
         run: |
           echo "Testing connectivity to ${{ secrets.SERVER_HOST }}:22"
-          apt-get update -y
-          apt-get install -y netcat-openbsd || true
+          sudo apt-get update -y
+          sudo apt-get install -y netcat-openbsd || true
           nc -vz ${{ secrets.SERVER_HOST }} 22 || true
       - name: Deploy to EC2 via SSH and docker-compose
         uses: appleboy/ssh-action@v1.0.0
