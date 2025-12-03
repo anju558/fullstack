@@ -73,6 +73,6 @@ jobs:
             port: ${{ secrets.EC2_PORT || '22' }}
             script: |
               set -e
-              cd /opt/scmlite
+              cd /opt/scm_development
               docker-compose pull
               docker-compose up -d --remove-orphans
