@@ -298,8 +298,7 @@ fullstack/
 │   │   ├── my_shipments.html  # Shipment list
 │   │   └── ...                # Other templates
 │   ├── static/
-│   │   ├── app.js             # Frontend JS
-│   │   └── styles.css         # Styling
+│   │   ├── styles.css         # Styling (app is server-rendered; no custom client JS)
 │   ├── Dockerfile
 │   └── requirements.txt
 │

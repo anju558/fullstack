@@ -3,60 +3,115 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Device Stream — ShipTrack</title>
+    <title>Devices — ShipTrack</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
     <link rel="stylesheet" href="/static/styles.css">
 </head>
-<body class="dashboard device-stream-page">
-    <div class="page-container">
-        <header class="page-header">
-            <a href="/devices" class="btn-outline">← Back to Devices</a>
-            <h1>Device: {{ device_id }}</h1>
-        </header>
+<body class="dashboard">
+    <div class="dashboard-container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>ShipTrack</h2>
+                <button class="sidebar-toggle" id="sidebarToggle">☰</button>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="/dashboard" class="btn-secondary">Dashboard</a>
+                <a href="#profile" class="btn-secondary">Profile</a>
+                <a href="/my-shipments" class="btn-secondary">My Shipments</a>
+                <a href="/devices" class="btn-secondary">Device Data</a>
+            </nav>
+        </aside>
 
-        <main class="page-main">
-            <section class="device-info">
-                {% if device %}
-                <h2>Last known details</h2>
-                <ul>
-                    {% for k, v in device.items() %}
-                    <li><strong>{{ k }}:</strong> {{ v }}</li>
-                    {% endfor %}
-                </ul>
-                {% else %}
-                <div class="alert alert-info">No data found for this device yet.</div>
-                {% endif %}
+        <main class="dashboard-main">
+            <header class="dashboard-header">
+                <h1>Device Data</h1>
+                <div class="logout-container">
+                    <a href="/logout">Logout</a>
+                </div>
+            </header>
+
+            <!-- Search Bar Section -->
+            <section class="devices-search-section">
+                <div class="search-container">
+                    <input type="text" id="deviceSearchInput" class="search-input" placeholder="Enter Device ID..." />
+                    <button id="deviceSearchBtn" class="btn-primary">Search</button>
+                </div>
             </section>
 
-            <section class="live-stream">
-                <h2>Live stream</h2>
-                <div id="streamArea" class="stream-area">Waiting for updates...</div>
+            <!-- Devices Table -->
+            <section class="devices-table-section">
+                <table class="devices-table" id="devicesTable">
+                    <thead>
+                        <tr>
+                            <th>Device ID</th>
+                            <th>Battery Level</th>
+                            <th>Temperature</th>
+                            <th>Route From</th>
+                            <th>Route To</th>
+                            <th>Timestamp</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if devices|length == 0 %}
+                        <tr><td colspan="6">No devices found.Check logs or database.</td></tr>
+                        {% else %}
+                        {% for d in devices %}
+                        <tr>
+                            <!-- Device ID -->
+                             <td>
+                                {{ 
+                                    d.get('Device_ID') or 
+                                    d.get('device_id') or 
+                                    d.get('Device') or 
+                                    d.get('deviceId') or 
+                                    d.get('device') or 
+                                    '—' 
+                                }}
+                            </td>
+                            <td>
+                                {% set bat = 
+                                    d.get('Battery_Level') or 
+                                    d.get('battery_level') or 
+                                    d.get('battery') or 
+                                    d.get('voltage') or 
+                                    d.get('Battery') 
+                                %}
+                                {{ "%.2f"|format(bat|float) if bat else '—' }} V
+                            </td>
+                            <td>
+                                {% set temp = 
+                                    d.get('First_Sensor_temperature') or 
+                                    d.get('temperature') or 
+                                    d.get('temp') or 
+                                    d.get('sensor1_temp') or 
+                                    d.get('Temp') 
+                                %}
+                                {{ "%.1f"|format(temp|float) if temp else '—' }} °C
+                            </td>
+                            <td>{{ d.get('Route_From') or '—' }}</td>
+                            <td>{{ d.get('Route_To') or '—' }}</td>
+                            <td>
+                                {% set ts = d.get('timestamp') or d.get('ts') or d.get('time') %}
+                                {% if ts %}
+                                    {% if ts is string and 'T' in ts %}
+                                        {{ ts[:10] }}<br><small>{{ ts[11:19] }}</small>
+                                    {% elif ts is string %}
+                                        {{ ts[:10] }}
+                                    {% else %}
+                                        {{ ts.isoformat()[:19] if ts else '—' }}
+                                    {% endif %}
+                                {% else %}
+                                    —
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        {% endif %}
+                    </tbody>
+                </table>
             </section>
         </main>
     </div>
-
-    <script>
-        // Simple polling to simulate live stream
-        const deviceId = "{{ device_id }}";
-        async function poll() {
-            try {
-                const res = await fetch(`/api/devices`);
-                if (!res.ok) return;
-                const data = await res.json();
-                const matches = data.devices.filter(d => d.Device === deviceId);
-                const area = document.getElementById('streamArea');
-                if (!matches.length) {
-                    area.textContent = 'No recent updates for this device.';
-                    return;
-                }
-                // show the latest record
-                const latest = matches[matches.length - 1];
-                area.textContent = JSON.stringify(latest, null, 2);
-            } catch (err) {
-                console.error('Polling error', err);
-            }
-        }
-        setInterval(poll, 3000);
-        poll();
-    </script>
+    <script src="/static/app.js" defer></script>
 </body>
 </html>

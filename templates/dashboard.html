@@ -4,42 +4,65 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Shipments — ShipTrack</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
     <link rel="stylesheet" href="/static/styles.css">
+    
 </head>
 <body class="dashboard">
     <div class="dashboard-container">
         <aside class="sidebar">
             <div class="sidebar-header">
                 <h2>ShipTrack</h2>
-                <button class="sidebar-toggle" id="sidebarToggle">☰</button>
+                <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle sidebar">☰</button>
             </div>
             <nav class="sidebar-nav">
-                <a href="/dashboard" class="active">📦 My Shipments</a>
-                <a href="/profile">👤 My Profile</a>
-                <a href="/create-shipment">➕ New Shipment</a>
-                <a href="/devices">🚪 Device Data</a>
-                <a href="/view-stream">📡 View Stream</a>
+                <a href="/dashboard" class="btn-secondary">Dashboard</a>
+                <a href="/profile" class="btn-secondary">My Profile</a>
+                <a href="/my-shipments" class="btn-secondary">My Shipments</a>
+                <a href="/devices" class="btn-secondary">Device Data</a>
+
             </nav>
         </aside>
 
         <main class="dashboard-main">
             <header class="dashboard-header">
-                <h1>Welcome, <strong>{{ username }}</strong></h1>
-                <div class="dashboard-actions">
-                    <a href="/create-shipment" class="btn-primary">+ Create Shipment</a>
-                    <a href="/my-shipments" class="btn-secondary">📦 My Shipments</a>
-                    <a href="/view-stream" class="btn-secondary">📡 View Stream</a>
+                <div class="dashboard-heading">
+                    <h1>Welcome, <strong>{{ username }}</strong></h1>
                 </div>
             </header>
+            <div class="top-right-logout">
+                <a href="/logout" id="logoutBtn" class="btn btn-primary btn-lg">Logout</a>
+            </div>
 
-            <section class="dashboard-welcome">
-                <div class="welcome-card">
-                    <p>Select an action above to get started.</p>
+            <section class="action-card-wrap">
+                <div class="dashboard-actions">
+
+                    <!-- Create Shipment BOX -->
+                    <a href="/create-shipment" class="big-box">
+                        <span>🚚</span>
+                        <h3>Create Shipment</h3>
+                        <p>Quickly add new shipment details</p>
+                    </a>
+
+                    <!-- View Stream BOX -->
+                    <a href="/devices" class="big-box">
+                        <span>📡</span>
+                        <h3>View Stream</h3>
+                         <p>Monitor real-time device data</p>
+                    </a>
+
                 </div>
+            </section>
+
+
+
+            <!-- Rest of dashboard content -->
+            <section class="dashboard-welcome mt-4">
+                <!-- existing content can go here -->
             </section>
         </main>
     </div>
-
     <script src="/static/app.js" defer></script>
+
 </body>
 </html>

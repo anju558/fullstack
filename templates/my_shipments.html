@@ -3,24 +3,90 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>My Shipments — ShipTrack</title>
+    <title>Shipments — ShipTrack</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
     <link rel="stylesheet" href="/static/styles.css">
 </head>
-<body class="page">
-    <div class="page-container">
-        <header class="page-header">
-            <a href="/dashboard" class="btn-back">← Back to Dashboard</a>
-            <h1>My Shipments</h1>
-            <a href="/create-shipment" class="btn-primary">+ Create New</a>
-        </header>
-
-        <main class="page-main">
-            <div id="shipmentsContainer" class="shipments-list">
-                <p class="loading">Loading your shipments...</p>
+<body class="dashboard">
+    <div class="dashboard-container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>ShipTrack</h2>
+                <button class="sidebar-toggle" id="sidebarToggle">☰</button>
             </div>
+            <nav class="sidebar-nav">
+                <a href="/dashboard" class="btn-secondary">🔎 Dashboard</a>
+                <a href="/profile" class="btn-secondary">👤 Profile</a>
+                <a href="/my-shipments" class="btn-secondary active">📦 My Shipments</a>
+                <a href="/devices" class="btn-secondary">🖥️ Devices</a>
+            </nav>
+        </aside>
+
+        <main class="dashboard-main">
+            <header class="dashboard-header">
+                <h1>My Shipments</h1>
+                <div class="logout-container">
+                    <a href="/logout">Logout</a>
+                </div>
+            </header>
+
+            <!-- Search Bar -->
+            <section class="devices-search-section">
+                <div class="search-container">
+                    <input 
+                        type="text" 
+                        id="searchInput" 
+                        class="search-input" 
+                        placeholder="Search by Shipment"
+                        value="{{ search_query or '' }}"
+                    />
+                    <button id="searchBtn" class="btn-primary">🔍 Search</button>
+                </div>
+            </section>
+
+            <!-- Shipments Table -->
+            <section class="devices-table-section">
+                <table class="devices-table" id="devicesTable">
+                    <thead>
+                        <tr>
+                            <th>Shipment</th>
+                            <th>Device</th>
+                            <th>Created At</th>
+                            <th>Container</th>
+                            <th>Batch ID</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if shipments|length == 0 %}
+                            <tr>
+                                <td colspan="5">📭 No shipments found.</td>
+                            </tr>
+                        {% else %}
+                            {% for s in shipments %}
+                                <tr>
+                                    <td>{{ s.get('Shipment_Number') or s.get('Shipment') or '—' }}</td>
+                                    <td>{{ s.get('Device') or '—' }}</td>
+                                    <td>{{ s.get('created_at') or '—' }}</td>                                       
+                                    
+                                    <td>{{ s.get('Container_number') or '—' }}</td>
+                                    <td>{{ s.get('Batch_ID') or '—' }}</td>
+                                </tr>
+                            {% endfor %}
+                        {% endif %}
+                    </tbody>
+                </table>
+            </section>
         </main>
     </div>
 
     <script src="/static/app.js" defer></script>
+    <script>
+        // Optional: Enable Enter key search
+        document.getElementById('searchInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                document.getElementById('searchBtn').click();
+            }
+        });
+    </script>
 </body>
 </html>

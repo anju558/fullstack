@@ -4,6 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Devices — ShipTrack</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
     <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body class="dashboard">
@@ -14,25 +15,103 @@
                 <button class="sidebar-toggle" id="sidebarToggle">☰</button>
             </div>
             <nav class="sidebar-nav">
-                <a href="/dashboard">📦 Shipments</a>
-                <a href="/devices" class="active">🖥️ Devices</a>
-                <a href="#profile">👤 Profile</a>
-                <a href="/logout">🚪 Logout</a>
+                <a href="/dashboard" class="btn-secondary">Dashboard</a>
+                <a href="#profile" class="btn-secondary">Profile</a>
+                <a href="/my-shipments" class="btn-secondary">My Shipments</a>
+                <a href="/devices" class="btn-secondary">Device Data</a>
             </nav>
         </aside>
 
         <main class="dashboard-main">
             <header class="dashboard-header">
-                <h1>Device Tracking</h1>
-                <span class="badge badge-online">● 12 Online</span>
+                <h1>Device Data</h1>
+                <div class="logout-container">
+                    <a href="/logout">Logout</a>
+                </div>
             </header>
 
-            <section class="devices-grid">
-                <p>This is a server-rendered placeholder for devices. You can extend it to load real device data from the API.</p>
+            <!-- Search Bar Section -->
+            <section class="devices-search-section">
+                <div class="search-container">
+                    <input type="text" id="deviceSearchInput" class="search-input" placeholder="Enter Device ID..." />
+                    <button id="deviceSearchBtn" class="btn-primary">Search</button>
+                </div>
+            </section>
+
+            <!-- Devices Table -->
+            <section class="devices-table-section">
+                <table class="devices-table" id="devicesTable">
+                    <thead>
+                        <tr>
+                            <th>Device ID</th>
+                            <th>Battery Level</th>
+                            <th>Temperature</th>
+                            <th>Route From</th>
+                            <th>Route To</th>
+                            <th>Timestamp</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if devices|length == 0 %}
+                        <tr><td colspan="6">No devices found.Check logs or database.</td></tr>
+                        {% else %}
+                        {% for d in devices %}
+                        <tr>
+                            <!-- Device ID -->
+                             <td>
+                                {{ 
+                                    d.get('Device_ID') or 
+                                    d.get('device_id') or 
+                                    d.get('Device') or 
+                                    d.get('deviceId') or 
+                                    d.get('device') or 
+                                    '—' 
+                                }}
+                            </td>
+                            <td>
+                                {% set bat = 
+                                    d.get('Battery_Level') or 
+                                    d.get('battery_level') or 
+                                    d.get('battery') or 
+                                    d.get('voltage') or 
+                                    d.get('Battery') 
+                                %}
+                                {{ "%.2f"|format(bat|float) if bat else '—' }} V
+                            </td>
+                            <td>
+                                {% set temp = 
+                                    d.get('First_Sensor_temperature') or 
+                                    d.get('temperature') or 
+                                    d.get('temp') or 
+                                    d.get('sensor1_temp') or 
+                                    d.get('Temp') 
+                                %}
+                                {{ "%.1f"|format(temp|float) }} °C
+                            </td>
+                            <td>{{ d.get('Route_From') or '—' }}</td>
+                            <td>{{ d.get('Route_To') or '—' }}</td>
+                            <td>
+                                {% set ts = d.get('timestamp') or d.get('ts') or d.get('time') %}
+                                {% if ts %}
+                                    {% if ts is string and 'T' in ts %}
+                                        {{ ts[:10] }}<br><small>{{ ts[11:19] }}</small>
+                                    {% elif ts is string %}
+                                        {{ ts[:10] }}
+                                    {% else %}
+                                        {{ ts.isoformat()[:19] if ts else '—' }}
+                                    {% endif %}
+                                {% else %}
+                                    —
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        {% endif %}
+                    </tbody>
+                </table>
             </section>
         </main>
     </div>
-
     <script src="/static/app.js" defer></script>
 </body>
 </html>

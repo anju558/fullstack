@@ -1,268 +1,148 @@
-/**
- * ============================================
- * SHIPTRACK APP - CLEAN JAVASCRIPT
- * ============================================
- * Well-organized with clear sections
- * API endpoints: /api/profile, /api/my-shipments, /api/devices
- */
+// DOM Ready: consolidated
+document.addEventListener('DOMContentLoaded', function () {
+    // 🔹 Sidebar Toggle (for mobile)
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    const nav = document.getElementById('nav');
 
-// ================== INITIALIZATION ==================
-document.addEventListener('DOMContentLoaded', () => {
-  console.log('✅ Initializing app...');
-  initMobileNav();
-  initForms();
-  initModals();
-  initPageHandlers();
+    if (sidebarToggle && nav) {
+        sidebarToggle.addEventListener('click', () => {
+            nav.classList.toggle('active');
+        });
+
+        // Close sidebar when clicking a nav link (mobile)
+        document.querySelectorAll('.nav a').forEach(link => {
+            link.addEventListener('click', () => {
+                nav.classList.remove('active');
+            });
+        });
+    }
+
+    // 🔹 Optional: Confirm logout (improves UX)
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', function (e) {
+            // no-op placeholder or confirm if you want
+        });
+    }
+
+    // 🔹 Password toggle (if present on login/signup)
+    const toggleButtons = document.querySelectorAll('.password-text-toggle');
+    toggleButtons.forEach(btn => {
+        btn.addEventListener('click', function () {
+            const wrapper = this.closest('.password-wrapper');
+            if (!wrapper) return;
+            const input = wrapper.querySelector('input');
+            if (!input) return;
+            if (input.type === 'password') {
+                input.type = 'text';
+                this.textContent = 'Hide';
+            } else {
+                input.type = 'password';
+                this.textContent = 'Show';
+            }
+        });
+    });
+
+    // Search button handler (if present)
+    const searchBtn = document.getElementById("searchBtn");
+    if (searchBtn) {
+        searchBtn.addEventListener("click", () => {
+            const input = document.getElementById("searchInput");
+            const query = input ? input.value.trim() : "";
+            let url = "/my-shipments";
+            if (query !== "") {
+                url += `?shipment=${encodeURIComponent(query)}`;
+            }
+            window.location.href = url;
+        });
+    }
+
+    // View Stream: Intercept device selection & load stream without full reload
+    const streamForm = document.querySelector('.stream-controls form');
+    const deviceSelect = document.getElementById('deviceSelect') || document.getElementById('device-select');
+    if (streamForm && deviceSelect) {
+        streamForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const device = deviceSelect.value;
+            const url = new URL('/view-stream', window.location.origin);
+            if (device) url.searchParams.set('device', device);
+
+            try {
+                const response = await fetch(url, { headers: { 'Accept': 'text/html' } });
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const html = await response.text();
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const newStreamContainer = doc.getElementById('streamContainer');
+                const currentStreamContainer = document.getElementById('streamContainer');
+                if (newStreamContainer && currentStreamContainer) {
+                    currentStreamContainer.outerHTML = newStreamContainer.outerHTML;
+                }
+                window.history.replaceState(null, '', url);
+            } catch (err) {
+                console.error('Failed to refresh stream:', err);
+                alert('Failed to load stream. Please try again.');
+            }
+        });
+    }
+
+    // If there's a device-select dropdown (not inside form) load on change
+    if (deviceSelect) {
+        deviceSelect.addEventListener('change', (e) => {
+            const val = e.target.value;
+            if (val) loadStream(val).catch(err => console.error(err));
+        });
+    }
 });
 
-// ================== NAVIGATION & UI SETUP ==================
-
-function initMobileNav() {
-  const sidebarToggle = document.getElementById('sidebarToggle');
-  if (sidebarToggle) {
-    sidebarToggle.addEventListener('click', () => {
-      const nav = document.querySelector('.sidebar-nav');
-      if (nav) nav.classList.toggle('show');
-    });
-  }
-}
-
-function initForms() {
-  document.querySelectorAll('form').forEach(form => {
-    form.addEventListener('submit', validateForm);
-  });
-  
-  document.querySelectorAll('input, textarea').forEach(input => {
-    input.addEventListener('input', clearInputError);
-  });
-}
-
-function validateForm(e) {
-  const fields = this.querySelectorAll('[required]');
-  let valid = true;
-  
-  fields.forEach(field => {
-    if (!field.value.trim()) {
-      valid = false;
-      showInputError(field);
-    }
-  });
-  
-  if (!valid) e.preventDefault();
-}
-
-function showInputError(input) {
-  input.style.borderColor = '#ef4444';
-  input.style.boxShadow = '0 0 0 3px rgba(239, 68, 68, 0.08)';
-}
-
-function clearInputError() {
-  this.style.borderColor = 'rgba(255,255,255,0.06)';
-  this.style.boxShadow = 'none';
-}
-
-function initModals() {
-  document.querySelectorAll('.modal').forEach(modal => {
-    modal.addEventListener('click', (e) => {
-      if (e.target === modal) closeModal(modal);
-    });
-  });
-  
-  document.querySelectorAll('.modal-close, #closeModal').forEach(btn => {
-    btn.addEventListener('click', function() {
-      closeModal(this.closest('.modal'));
-    });
-  });
-  
-  document.querySelectorAll('#cancelModal').forEach(btn => {
-    btn.addEventListener('click', function() {
-      closeModal(this.closest('.modal'));
-    });
-  });
-}
-
-function closeModal(modal) {
-  if (modal) modal.style.display = 'none';
-}
-
-function initPageHandlers() {
-  if (document.getElementById('profileContent')) loadUserProfile();
-  if (document.getElementById('shipmentsContainer')) loadMyShipments();
-  if (document.getElementById('deviceSelect')) {
-    loadDevicesForStream();
-    document.getElementById('deviceSelect').addEventListener('change', pollStream);
-    document.getElementById('refreshBtn')?.addEventListener('click', () => {
-      loadDevicesForStream();
-      if (document.getElementById('deviceSelect').value) pollStream();
-    });
-  }
-}
-
-// ================== PROFILE PAGE ==================
-// API ENDPOINT: /api/profile
-async function loadUserProfile() {
-  const content = document.getElementById('profileContent');
-  
-  try {
-    content.innerHTML = '<p class="loading">⏳ Loading profile...</p>';
-    
-    const res = await fetch('/api/profile');
-    if (res.status === 401) {
-      window.location.href = '/login';
-      return;
-    }
-    if (!res.ok) throw new Error(`Error ${res.status}`);
-    
-    const data = await res.json();
-    
-    content.innerHTML = `
-      <div class="profile-field">
-        <span class="profile-label">Username</span>
-        <span class="profile-value">${escapeHtml(data.username)}</span>
-      </div>
-      <div class="profile-field">
-        <span class="profile-label">Email</span>
-        <span class="profile-value">${escapeHtml(data.email)}</span>
-      </div>
-      <div class="profile-field">
-        <span class="profile-label">User ID</span>
-        <span class="profile-value">${escapeHtml(data.id)}</span>
-      </div>
-      <div class="profile-field">
-        <span class="profile-label">Member Since</span>
-        <span class="profile-value">${formatDate(data.created_at)}</span>
-      </div>
-    `;
-    console.log('✅ Profile loaded');
-  } catch (err) {
-    console.error('Profile error:', err);
-    content.innerHTML = `<div class="error">❌ ${escapeHtml(err.message)}</div>`;
-  }
-}
-
-// ================== SHIPMENTS PAGE ==================
-// API ENDPOINT: /api/my-shipments
-async function loadMyShipments() {
-  try {
-    const res = await fetch('/api/my-shipments');
-    if (!res.ok) throw new Error('Failed to load');
-    
-    const data = await res.json();
-    const container = document.getElementById('shipmentsContainer');
-    
-    if (!data.shipments || !data.shipments.length) {
-      container.innerHTML = '<p class="empty-state">📦 No shipments. <a href="/create-shipment">Create one</a></p>';
-      return;
-    }
-    
-    container.innerHTML = data.shipments.map(s => `
-      <div class="shipment-card">
-        <div class="shipment-header">
-          <h3>${escapeHtml(s.Shipment_Number || 'N/A')}</h3>
-          <span class="shipment-date">${formatDate(s.created_at)}</span>
-        </div>
-        <div class="shipment-details">
-          <p><strong>Route:</strong> ${escapeHtml(s.Route_Details || 'N/A')}</p>
-          <p><strong>Device:</strong> ${escapeHtml(s.Device || 'N/A')}</p>
-          <p><strong>Delivery:</strong> ${escapeHtml(s.Expected_Delivery_Date || 'N/A')}</p>
-          <p><strong>Description:</strong> ${escapeHtml(s.Shipment_Description || 'N/A')}</p>
-        </div>
-      </div>
-    `).join('');
-    
-    console.log('✅ Shipments loaded');
-  } catch (err) {
-    document.getElementById('shipmentsContainer').innerHTML = '<p class="error">Error loading shipments</p>';
-  }
-}
-
-// ================== DEVICE STREAM ==================
-// API ENDPOINT: /api/devices
-let streamPollInterval = null;
-
-async function loadDevicesForStream() {
-  try {
-    const res = await fetch('/api/devices');
-    if (!res.ok) throw new Error('Failed to load');
-    
-    const data = await res.json();
-    const select = document.getElementById('deviceSelect');
-    const devices = Array.from(new Set(data.devices.map(d => d.Device).filter(Boolean)));
-    
-    const current = select.value;
-    select.innerHTML = '<option value="">-- All Devices --</option>';
-    
-    devices.forEach(dev => {
-      const opt = document.createElement('option');
-      opt.value = dev;
-      opt.textContent = dev;
-      select.appendChild(opt);
-    });
-    
-    if (current) select.value = current;
-  } catch (err) {
-    console.error('Device load error:', err);
-  }
-}
-
-async function pollStream() {
-  if (streamPollInterval) clearInterval(streamPollInterval);
-  
-  const area = document.querySelector('.stream-area');
-  const device = document.getElementById('deviceSelect')?.value || null;
-  
-  const update = async () => {
+// fetch stream data and populate table
+async function loadStream(deviceId) {
     try {
-      const res = await fetch('/api/devices');
-      if (!res.ok) return;
-      
-      const data = await res.json();
-      let items = data.devices || [];
-      
-      if (device) items = items.filter(d => d.Device === device);
-      
-      if (!items.length) {
-        area.textContent = '⏳ No data available';
-        return;
-      }
-      
-      area.textContent = JSON.stringify(items[items.length - 1], null, 2);
+        const response = await fetch(`/api/stream/${encodeURIComponent(deviceId)}`);
+        if (!response.ok) {
+            throw new Error('Failed to fetch stream data: ' + response.status);
+        }
+        const data = await response.json();
+        const tableBody = document.getElementById('stream-table-body');
+        if (!tableBody) {
+            alert("Stream table not found on this page.");
+            return;
+        }
+        tableBody.innerHTML = '';
+        if (data.stream_data && data.stream_data.length > 0) {
+            data.stream_data.forEach(item => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${item.timestamp || ''}</td>
+                    <td>${item.Battery_Level || ''}</td>
+                    <td>${item.First_Sensor_temperature || ''}</td>
+                    <td>${(item.Route_From || '')} → ${(item.Route_To || '')}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+        } else {
+            const row = document.createElement('tr');
+            row.innerHTML = `<td colspan="4" style="text-align:center">No data found for this device.</td>`;
+            tableBody.appendChild(row);
+        }
     } catch (err) {
-      console.error('Stream error:', err);
+        console.error('loadStream error:', err);
+        alert('Error loading stream data.');
     }
-  };
-  
-  await update();
-  streamPollInterval = setInterval(update, 3000);
 }
 
-// ================== UTILITY FUNCTIONS ==================
-
-function escapeHtml(text) {
-  if (!text) return '';
-  const map = {
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-    "'": '&#039;'
-  };
-  return String(text).replace(/[&<>"']/g, m => map[m]);
+// Optional: refresh devices table (call refreshDevices() somewhere if you want periodic updates)
+function refreshDevices() {
+    fetch('/devices')
+        .then(response => response.text())
+        .then(html => {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const newTable = doc.querySelector('#devicesTable tbody');
+            const current = document.querySelector('#devicesTable tbody');
+            if (newTable && current) {
+                current.replaceWith(newTable);
+            }
+        })
+        .catch(err => console.error('Refresh failed:', err));
 }
-
-function formatDate(iso) {
-  if (!iso) return 'N/A';
-  try {
-    return new Date(iso).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  } catch (e) {
-    return iso;
-  }
-}
-
-

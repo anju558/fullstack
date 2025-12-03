@@ -5,19 +5,24 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>ShipTrack - Smart Shipment Tracking</title>
     <meta name="description" content="ShipTrack — lightweight shipment tracking and admin dashboard." />
-  <link rel="stylesheet" href="/static/styles.css" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">  
+    <link rel="stylesheet" href="/static/styles.css" />
   </head>
   <body>
+    <!-- Top-Right Sign In Button -->
+    <div class="top-right-logout">
+      <a class="btn-outline" href="login.html">Sign in</a>
+    </div>
+
     <header class="site-header">
       <div class="container header-inner">
-        <a class="brand" href="#">ShipTrack</a>
-        <nav class="nav" id="nav">
+        <!-- Left Side: Logo + Features -->
+        <div class="header-left">
+          <a class="brand" href="#">ShipTrack</a>
           <a href="#features">Features</a>
-          <a href="#how">How it works</a>
-          <a href="#pricing">Pricing</a>
-          <a class="btn-outline" href="login.html">Sign in</a>
-        </nav>
-        <button id="navToggle" class="hamburger" aria-label="Toggle navigation"></button>
+        </div>
+
+        <!-- No header-right needed — we’re using top-right-logout for sign in -->
       </div>
     </header>
 
@@ -35,17 +40,6 @@
               <a class="btn-ghost" href="#features">Learn more</a>
             </div>
           </div>
-
-          <div class="hero-right" aria-hidden="true">
-            <div class="device-mock">
-              <div class="mock-top">Shipment Dashboard</div>
-              <div class="mock-body">
-                <div class="row"><span class="pill blue">In transit</span><span class="muted">Expected: Jun 8</span></div>
-                <div class="row"><strong>#SM12345</strong><span class="muted">Route: NY → LA</span></div>
-                <div class="row"><span class="tag">NDC: 7741</span><span class="tag">Batch: B-99</span></div>
-              </div>
-            </div>
-          </div>
         </div>
       </section>
 
@@ -53,42 +47,43 @@
         <h2>Features that make shipping simple</h2>
         <div class="grid">
           <article class="card">
-            <div class="icon">📦</div>
+            <div class="icon"></div>
             <h3>End-to-end tracking</h3>
             <p>Monitor every movement with timestamps and geolocation metadata. View history and create exports.</p>
           </article>
 
           <article class="card">
-            <div class="icon">🔒</div>
+            <div class="icon"></div>
             <h3>Secure by design</h3>
             <p>JWT-based auth and role permissions keep access safe. You control who can create or view shipments.</p>
           </article>
 
           <article class="card">
-            <div class="icon">⚙️</div>
+            <div class="icon"></div>
             <h3>Integrations & API</h3>
             <p>Import via CSV or call our REST endpoints to integrate with your systems and workflows.</p>
           </article>
 
           <article class="card">
-            <div class="icon">📊</div>
+            <div class="icon"></div>
             <h3>Reports & dashboards</h3>
             <p>Built-in reports let you analyze delivery times, exceptions and performance across carriers.</p>
           </article>
         </div>
       </section>
-
-      
     </main>
 
     <footer class="site-footer">
       <div class="container footer-inner">
         <div>© ShipTrack — Built for shipping teams</div>
-        <div class="small-links"><a href="#">Privacy</a><a href="#">Terms</a><a href="#">Contact</a></div>
+        <div class="small-links">
+          <a href="#">Privacy</a>
+          <a href="#">Terms</a>
+          <a href="#">Contact</a>
+        </div>
       </div>
     </footer>
 
     <script src="/static/app.js" defer></script>
   </body>
 </html>
-

@@ -1,55 +1,60 @@
-import socket
-import sys
-import errno
+# producer.py
+import os
 import json
 import time
 import random
+from datetime import datetime, timezone
+from kafka import KafkaProducer
 
-PORT = 5050
-SERVER = socket.gethostbyname(socket.gethostname())
-print(SERVER)
-ADDR = (SERVER, PORT)
-FORMAT = 'utf-8'
-DISCONNECT_MESSAGE = "!DISCONNECT"
+# Load config (fallbacks for local dev)
+KAFKA_BROKER = os.getenv("KAFKA_BROKER", "kafka:9092")
+KAFKA_TOPIC = os.getenv("KAFKA_TOPIC", "sensor_data")
 
+# Retry connection
+producer = None
+for i in range(10):
+    try:
+        producer = KafkaProducer(
+            bootstrap_servers=KAFKA_BROKER,
+            value_serializer=lambda v: json.dumps(v, default=str).encode('utf-8'),
+            request_timeout_ms=20000,
+            max_block_ms=30000
+        )
+        print(f"[✓] Producer connected to Kafka at {KAFKA_BROKER}")
+        break
+    except Exception as e:
+        print(f"[!] Kafka connection failed (attempt {i+1}/10): {e}")
+        time.sleep(5)
+else:
+    raise RuntimeError("Failed to connect to Kafka after 10 attempts")
 
-server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-print("socket created")
+# Data generation
+routes = ['New York, USA', 'Chennai, India', 'Bengaluru, India', 'London, UK']
 
-server.bind(ADDR)    # bind this socket to the address we configured earlier
-server.listen(2)
-print(f"[LISTENING] Server is listening on {SERVER}")
-conn, addr = server.accept()
-print(f'CONNECTION FROM {addr} HAS BEEN ESTABLISHED')
-connected = True
-while connected:
-        try:
-            for i in range(0,5):
-                route = ['Newyork,USA','Chennai, India','Bengaluru, India','London,UK']
-                routefrom = random.choice(route)
-                routeto = random.choice(route)
-                if (routefrom!=routeto):
-                    data = {
-                        "Battery_Level":round(random.uniform(2.00,5.00),2),
-                        "Device_ID": random.randint(1150,1158),
-                        "First_Sensor_temperature":round(random.uniform(10,40.0),1),
-                        "Route_From":routefrom,
-                        "Route_To":routeto
-                        }
-                    userdata = (json.dumps(data, indent=1)).encode(FORMAT)
-                    conn.send(userdata)
-                    print(userdata)
-                    time.sleep(10)
-                else:
-                    continue
+print(f"[→] Starting to send sensor data to topic: '{KAFKA_TOPIC}'")
+try:
+    while True:
+        route_from = random.choice(routes)
+        route_to = random.choice(routes)
+        if route_from == route_to:
+            continue
 
-            # clientdata = conn.recv(1024).decode(FORMAT)
-            # print("ACKNOWLEDGEMENT RECEIVED FROM CLIENT : " +clientdata)
-                       
+        data = {
+            "Device_ID": f"D{random.randint(1150, 1158)}",  # e.g., "D1151"
+            "Battery_Level": round(random.uniform(2.0, 5.0), 2),
+            "First_Sensor_temperature": round(random.uniform(10.0, 40.0), 1),
+            "Route_From": route_from,
+            "Route_To": route_to,
+            "timestamp": datetime.now(timezone.utc)
+        }
 
-        except IOError as e:
-            if e.errno == errno.EPIPE:
-                pass
+        producer.send(KAFKA_TOPIC, value=data)
+        print(f"✅ Sent: {data['Device_ID']} | {data['Battery_Level']}V | {data['First_Sensor_temperature']}°C")
+        time.sleep(10)  # Send every 10 sec
 
-conn.close()    #close the connection
-
+except KeyboardInterrupt:
+    print("\n[!] Stopping producer...")
+finally:
+    if producer:
+        producer.flush()
+        producer.close()
